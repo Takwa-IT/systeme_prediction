@@ -1,0 +1,13 @@
+# Keep runtime image minimal
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.idea/
+
+# Training inputs and scripts are not needed at runtime
+data/
+train_dual_mode_models.py
+main.py
+README.md

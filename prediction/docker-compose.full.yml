@@ -1,0 +1,68 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: huilerie-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: gestionhuilerie
+      MYSQL_ROOT_PASSWORD: verysecret
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pverysecret"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  prediction:
+    build:
+      context: ./prediction
+      dockerfile: Dockerfile
+    container_name: prediction-service
+    restart: unless-stopped
+    ports:
+      - "7500:7500"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:7500/').read()"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  backend:
+    build:
+      context: ./GestionHuilerieBackend
+      dockerfile: Dockerfile
+    container_name: huilerie-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      prediction:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/gestionhuilerie?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: verysecret
+      AI_PREDICTION_BASE_URL: http://prediction:7500
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./gesthuilerieF
+      dockerfile: Dockerfile
+    container_name: huilerie-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "4200:80"
+
+networks:
+  default:
+    name: huilerie-full-network
+
+volumes:
+  mysql_data:

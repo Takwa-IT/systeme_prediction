@@ -1,4 +1,5 @@
 from pathlib import Path
+import argparse
 import json
 
 import joblib
@@ -27,7 +28,8 @@ from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_PATH = BASE_DIR / "data" / "dataset_huilerie_avec_machine.csv"
+DATA_PATH = BASE_DIR / "data" / "dataset_huilerie_multietapes_5000.csv"
+ENRICHED_DATASET_PATH = BASE_DIR / "data" / "dataset_huilerie_multietapes.csv"
 MODELS_DIR = BASE_DIR / "models"
 MODELS_DIR.mkdir(exist_ok=True)
 
@@ -36,11 +38,21 @@ TARGET_QUALITY = "classe_qualite"
 TARGET_YIELD = "rendement_extraction_pourcent"
 WEIGHT_COLUMN = "poids_olives_kg"
 
-NO_LAB_FEATURES = [
+CATEGORICAL_FEATURES = [
     "variete",
     "region",
     "methode_recolte",
     "type_sol",
+    "lavage_effectue",
+    "type_machine",
+    "type_broyeur",
+    "type_malaxeur",
+    "type_nettoyage",
+    "type_separation",
+    "controle_temperature",
+]
+
+NUMERIC_FEATURES = [
     "poids_olives_kg",
     "maturite_niveau_1_5",
     "duree_stockage_jours",
@@ -51,10 +63,11 @@ NO_LAB_FEATURES = [
     "humidite_pourcent",
     "acidite_olives_pourcent",
     "taux_feuilles_pourcent",
-    "lavage_effectue",
-    "type_machine",
     "pression_extraction_bar",
-    "controle_temperature",
+    "nombre_etapes",
+    "presence_ajout_eau",
+    "presence_presse",
+    "presence_separateur",
 ]
 
 LAB_FEATURES = [
@@ -65,6 +78,7 @@ LAB_FEATURES = [
     "k270",
 ]
 
+NO_LAB_FEATURES = CATEGORICAL_FEATURES + NUMERIC_FEATURES
 WITH_LAB_FEATURES = NO_LAB_FEATURES + LAB_FEATURES
 
 
@@ -83,9 +97,96 @@ def validate_columns(df: pd.DataFrame, required_columns: list[str]) -> None:
         raise ValueError(f"Colonnes manquantes : {missing}")
 
 
+def normalize_value(value) -> str:
+    return (
+        str(value if value is not None else "")
+        .strip()
+        .lower()
+        .replace("é", "e")
+        .replace("è", "e")
+        .replace("ê", "e")
+        .replace("à", "a")
+        .replace("ç", "c")
+        .replace(" ", "_")
+        .replace("-", "_")
+    )
+
+
+def normalize_type_machine(value) -> str:
+    normalized = normalize_value(value)
+    mapping = {
+        "moderne_2_phases": "2_phase",
+        "moderne_3_phases": "3_phase",
+        "traditionnelle": "presse",
+        "2_phases": "2_phase",
+        "3_phases": "3_phase",
+        "centrifugation_2_phases": "2_phase",
+        "centrifugation_3_phases": "3_phase",
+        "presse_hydraulique": "presse",
+        "presse": "presse",
+    }
+    return mapping.get(normalized, normalized)
+
+
+def derive_type_nettoyage(row: pd.Series) -> str:
+    leaves = float(row.get("taux_feuilles_pourcent", 0) or 0)
+    humidity = float(row.get("humidite_pourcent", 0) or 0)
+    lavage = normalize_value(row.get("lavage_effectue", ""))
+
+    if leaves >= 1.2:
+        return "soufflerie"
+    if lavage == "oui" and humidity >= 17:
+        return "laveuse_eau"
+    return "separateur_feuilles"
+
+
+def derive_enriched_columns(df: pd.DataFrame) -> pd.DataFrame:
+    enriched = df.copy()
+
+    enriched["type_machine"] = enriched["type_machine"].map(
+        normalize_type_machine)
+    enriched["type_broyeur"] = enriched["type_machine"].map(
+        lambda value: "meule" if value == "presse" else "marteaux"
+    )
+    enriched["type_malaxeur"] = enriched["type_machine"].map(
+        lambda value: "vertical" if value == "3_phase" else "horizontal"
+    )
+    enriched["type_nettoyage"] = enriched.apply(derive_type_nettoyage, axis=1)
+    enriched["type_separation"] = enriched["type_machine"].map(
+        lambda value: {
+            "3_phase": "decanteur_3_phases",
+            "2_phase": "decanteur_2_phases",
+            "presse": "decantation_naturelle",
+        }.get(value, "decanteur_2_phases")
+    )
+    enriched["nombre_etapes"] = enriched["type_machine"].map(
+        lambda value: {"3_phase": 7, "2_phase": 6, "presse": 6}.get(value, 0)
+    )
+    enriched["presence_ajout_eau"] = enriched["type_machine"].map(
+        lambda value: 1 if value == "3_phase" else 0
+    )
+    enriched["presence_presse"] = enriched["type_machine"].map(
+        lambda value: 1 if value == "presse" else 0
+    )
+    enriched["presence_separateur"] = enriched["type_machine"].map(
+        lambda value: 1 if value in {"3_phase", "presse"} else 0
+    )
+
+    return enriched
+
+
+def ensure_feature_schema(df: pd.DataFrame, feature_columns: list[str]) -> pd.DataFrame:
+    prepared = df.copy()
+    for column in feature_columns:
+        if column not in prepared.columns:
+            prepared[column] = np.nan
+    return prepared[feature_columns]
+
+
 def build_preprocessor(X: pd.DataFrame):
-    categorical_features = X.select_dtypes(include=["object"]).columns.tolist()
-    numeric_features = X.select_dtypes(include=[np.number]).columns.tolist()
+    categorical_features = [
+        col for col in CATEGORICAL_FEATURES if col in X.columns]
+    numeric_features = [col for col in NUMERIC_FEATURES if col in X.columns]
 
     categorical_transformer = Pipeline(
         steps=[
@@ -241,7 +342,8 @@ def train_mode(df, feature_columns, mode_name, label_encoder):
     y_quality = label_encoder.transform(df[TARGET_QUALITY].copy())
     y_yield = df[TARGET_YIELD].copy()
 
-    preprocessor, categorical_features, numeric_features = build_preprocessor(X)
+    preprocessor, categorical_features, numeric_features = build_preprocessor(
+        X)
 
     X_train, X_test, yq_train, yq_test, yy_train, yy_test = train_test_split(
         X,
@@ -279,7 +381,8 @@ def train_mode(df, feature_columns, mode_name, label_encoder):
         f"Régression rendement - {mode_name}",
     )
 
-    quality_importance = extract_feature_importance(quality_search.best_estimator_)
+    quality_importance = extract_feature_importance(
+        quality_search.best_estimator_)
     yield_importance = extract_feature_importance(yield_search.best_estimator_)
 
     return {
@@ -298,11 +401,15 @@ def train_mode(df, feature_columns, mode_name, label_encoder):
 def save_artifacts(label_encoder, no_lab_results, with_lab_results):
     joblib.dump(label_encoder, MODELS_DIR / "label_encoder.pkl")
 
-    joblib.dump(no_lab_results["quality_model"], MODELS_DIR / "quality_model_no_lab.pkl")
-    joblib.dump(no_lab_results["yield_model"], MODELS_DIR / "yield_model_no_lab.pkl")
+    joblib.dump(no_lab_results["quality_model"],
+                MODELS_DIR / "quality_model_no_lab.pkl")
+    joblib.dump(no_lab_results["yield_model"],
+                MODELS_DIR / "yield_model_no_lab.pkl")
 
-    joblib.dump(with_lab_results["quality_model"], MODELS_DIR / "quality_model_with_lab.pkl")
-    joblib.dump(with_lab_results["yield_model"], MODELS_DIR / "yield_model_with_lab.pkl")
+    joblib.dump(with_lab_results["quality_model"],
+                MODELS_DIR / "quality_model_with_lab.pkl")
+    joblib.dump(with_lab_results["yield_model"],
+                MODELS_DIR / "yield_model_with_lab.pkl")
 
     metadata = {
         "target_quality": TARGET_QUALITY,
@@ -345,19 +452,42 @@ def save_artifacts(label_encoder, no_lab_results, with_lab_results):
         print(path)
 
 
+def export_enriched_dataset(source_path: Path = DATA_PATH, target_path: Path = ENRICHED_DATASET_PATH) -> pd.DataFrame:
+    raw_df = load_dataset(source_path)
+    enriched_df = derive_enriched_columns(raw_df)
+    enriched_df.to_csv(target_path, index=False)
+    return enriched_df
+
+
 def main():
-    df = load_dataset(DATA_PATH)
+    parser = argparse.ArgumentParser(
+        description="Entraînement IA huile d'olive multi-étapes")
+    parser.add_argument("--export-only", action="store_true",
+                        help="Génère seulement le dataset enrichi")
+    parser.add_argument("--data", type=Path,
+                        default=DATA_PATH, help="Chemin du CSV source")
+    parser.add_argument("--output", type=Path,
+                        default=ENRICHED_DATASET_PATH, help="Chemin du CSV enrichi")
+    args = parser.parse_args()
+
+    df = export_enriched_dataset(args.data, args.output)
 
     validate_columns(
         df,
-        [TARGET_QUALITY, TARGET_YIELD, WEIGHT_COLUMN] + NO_LAB_FEATURES + LAB_FEATURES,
+        [TARGET_QUALITY, TARGET_YIELD, WEIGHT_COLUMN] +
+        NO_LAB_FEATURES + LAB_FEATURES,
     )
+
+    if args.export_only:
+        print(f"Dataset enrichi exporté vers {args.output}")
+        return
 
     label_encoder = LabelEncoder()
     label_encoder.fit(df[TARGET_QUALITY])
 
     no_lab_results = train_mode(df, NO_LAB_FEATURES, "no_lab", label_encoder)
-    with_lab_results = train_mode(df, WITH_LAB_FEATURES, "with_lab", label_encoder)
+    with_lab_results = train_mode(
+        df, WITH_LAB_FEATURES, "with_lab", label_encoder)
 
     save_artifacts(label_encoder, no_lab_results, with_lab_results)
 

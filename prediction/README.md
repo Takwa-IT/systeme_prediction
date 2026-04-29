@@ -7,6 +7,12 @@ Ce projet implémente un module intelligent permettant de prédire :
 
 ## Installation
 
+python -m venv .venv
+
+# Windows PowerShell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+.\.venv\Scripts\Activate.ps1
+
 pip install -r requirements.txt
 
 ## Entraînement
@@ -15,7 +21,7 @@ python train_dual_mode_models.py
 
 ## Lancer API
 
-uvicorn app:app --host 0.0.0.0 --port 7500 --reload
+python -m uvicorn app:app --host 0.0.0.0 --port 7500 --reload
 
 ## Accès
 

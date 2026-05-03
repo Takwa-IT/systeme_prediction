@@ -146,8 +146,6 @@ def quality_from_metrics(acidite_huile, peroxyde, polyphenols, rendement):
     if rendement >= 18:
         score += 1
 
-
-
     if score >= 6:
         return "Extra Vierge"
     if score >= 4:

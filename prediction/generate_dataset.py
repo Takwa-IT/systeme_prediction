@@ -146,11 +146,13 @@ def quality_from_metrics(acidite_huile, peroxyde, polyphenols, rendement):
     if rendement >= 18:
         score += 1
 
+
+
     if score >= 6:
-        return "Excellente"
+        return "Extra Vierge"
     if score >= 4:
-        return "Bonne"
-    return "Moyenne"
+        return "Vierge"
+    return "Lampante"
 
 
 def generate_rows(count=500):

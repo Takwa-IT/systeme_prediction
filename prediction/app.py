@@ -239,15 +239,24 @@ def select_models(mode: str):
             quality_model_with_lab,
             yield_model_with_lab,
             metadata["modes"]["with_lab"]["feature_columns"],
+            metadata["modes"]["with_lab"]["categorical_features"],
+            metadata["modes"]["with_lab"]["numeric_features"],
         )
     return (
         quality_model_no_lab,
         yield_model_no_lab,
         metadata["modes"]["no_lab"]["feature_columns"],
+        metadata["modes"]["no_lab"]["categorical_features"],
+        metadata["modes"]["no_lab"]["numeric_features"],
     )
 
 
-def build_input_frame(data: PredictionInput, feature_columns: list[str]) -> pd.DataFrame:
+def build_input_frame(
+    data: PredictionInput,
+    feature_columns: list[str],
+    categorical_columns: list[str],
+    numeric_columns: list[str],
+) -> pd.DataFrame:
     payload = derive_payload_features(data)
     frame = pd.DataFrame([payload])
 
@@ -269,8 +278,12 @@ def build_input_frame(data: PredictionInput, feature_columns: list[str]) -> pd.D
             default_val = default_values.get(column, 0)
             frame[column] = default_val
 
-    # Convertir en types corrects et remplacer les NA
-    for col in feature_columns:
+    # Garder les colonnes catégorielles en texte; ne convertir que les colonnes numériques.
+    for col in categorical_columns:
+        if col in frame.columns:
+            frame[col] = frame[col].fillna("").astype(str)
+
+    for col in numeric_columns:
         if col in frame.columns:
             frame[col] = pd.to_numeric(frame[col], errors="coerce").fillna(0)
 
@@ -281,14 +294,16 @@ def build_input_frame(data: PredictionInput, feature_columns: list[str]) -> pd.D
 def predict(data: PredictionInput):
     try:
         mode = "with_lab" if has_lab_analysis(data) else "no_lab"
-        quality_model, yield_model, feature_columns = select_models(mode)
+        quality_model, yield_model, feature_columns, categorical_columns, numeric_columns = select_models(
+            mode)
 
         # Log pour debugging
         print(f"\n=== DEBUG PREDICTION ===")
         print(f"Mode: {mode}")
         print(f"Features requises: {feature_columns}")
 
-        input_df = build_input_frame(data, feature_columns)
+        input_df = build_input_frame(
+            data, feature_columns, categorical_columns, numeric_columns)
 
         print(f"Input DataFrame shape: {input_df.shape}")
         print(f"Input DataFrame dtypes:\n{input_df.dtypes}")

@@ -128,27 +128,35 @@ def weighted_choice(options):
 
 def quality_from_metrics(acidite_huile, peroxyde, polyphenols, rendement):
     score = 0
-    if acidite_huile <= 0.5:
+    if acidite_huile <= 0.35:
+        score += 3
+    elif acidite_huile <= 0.5:
         score += 2
-    elif acidite_huile <= 0.8:
+    elif acidite_huile <= 0.7:
         score += 1
 
-    if peroxyde <= 10:
+    if peroxyde <= 8:
+        score += 3
+    elif peroxyde <= 11:
         score += 2
-    elif peroxyde <= 15:
+    elif peroxyde <= 14:
         score += 1
 
-    if polyphenols >= 400:
+    if polyphenols >= 450:
+        score += 3
+    elif polyphenols >= 380:
         score += 2
-    elif polyphenols >= 300:
+    elif polyphenols >= 320:
         score += 1
 
     if rendement >= 18:
         score += 1
+    if rendement >= 19:
+        score += 1
 
-    if score >= 6:
+    if score >= 8:
         return "Extra Vierge"
-    if score >= 4:
+    if score >= 5:
         return "Vierge"
     return "Lampante"
 
@@ -280,6 +288,11 @@ def generate_rows(count=500):
         rendement += (18 - humidite) * 0.12
         rendement += variety_profile["rendement_delta"]
         rendement += (region_profile["rendement"] - 18.5) * 0.25
+        rendement += (0.45 - acidite_huile) * 2.6
+        rendement += (10.0 - peroxyde) * 0.12
+        rendement += (polyphenols - 360) / 220.0
+        rendement += (1.65 - k232) * 1.0
+        rendement += (0.16 - k270) * 6.0
         rendement += 0.15 if methode == "mecanique" else 0.0
         rendement += -0.2 if methode == "manuelle" else 0.0
         rendement += random.uniform(-1.2, 1.2)

@@ -26,3 +26,7 @@ python -m uvicorn app:app --host 0.0.0.0 --port 7500 --reload
 ## Accès
 
 http://127.0.0.1:7500/docs
+
+
+## Re-training
+python .\schedule-retraining.py

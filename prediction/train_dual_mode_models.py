@@ -183,10 +183,12 @@ def ensure_feature_schema(df: pd.DataFrame, feature_columns: list[str]) -> pd.Da
     return prepared[feature_columns]
 
 
-def build_preprocessor(X: pd.DataFrame):
+def build_preprocessor(X: pd.DataFrame, include_lab_features: bool = False):
     categorical_features = [
         col for col in CATEGORICAL_FEATURES if col in X.columns]
-    numeric_features = [col for col in NUMERIC_FEATURES if col in X.columns]
+    numeric_candidates = NUMERIC_FEATURES + \
+        (LAB_FEATURES if include_lab_features else [])
+    numeric_features = [col for col in numeric_candidates if col in X.columns]
 
     categorical_transformer = Pipeline(
         steps=[
@@ -337,13 +339,15 @@ def extract_feature_importance(fitted_pipeline: Pipeline, top_n: int = 15) -> li
     ]
 
 
-def train_mode(df, feature_columns, mode_name, label_encoder):
+def train_mode(df, feature_columns, mode_name, label_encoder, include_lab_features: bool = False):
     X = df[feature_columns].copy()
     y_quality = label_encoder.transform(df[TARGET_QUALITY].copy())
     y_yield = df[TARGET_YIELD].copy()
 
     preprocessor, categorical_features, numeric_features = build_preprocessor(
-        X)
+        X,
+        include_lab_features=include_lab_features,
+    )
 
     X_train, X_test, yq_train, yq_test, yy_train, yy_test = train_test_split(
         X,
@@ -487,7 +491,12 @@ def main():
 
     no_lab_results = train_mode(df, NO_LAB_FEATURES, "no_lab", label_encoder)
     with_lab_results = train_mode(
-        df, WITH_LAB_FEATURES, "with_lab", label_encoder)
+        df,
+        WITH_LAB_FEATURES,
+        "with_lab",
+        label_encoder,
+        include_lab_features=True,
+    )
 
     save_artifacts(label_encoder, no_lab_results, with_lab_results)
 

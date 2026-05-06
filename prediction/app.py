@@ -1,11 +1,12 @@
 from pathlib import Path
 import json
-from typing import Dict, List, Optional
+import re
+from typing import Any, Dict, List, Optional
 
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -42,6 +43,31 @@ def normalize_value(value) -> str:
     )
 
 
+def to_camel(field_name: str) -> str:
+    parts = field_name.split("_")
+    return parts[0] + "".join(part.capitalize() for part in parts[1:])
+
+
+def canonicalize_key(key: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", str(key).lower())
+
+
+def normalize_payload_keys(payload: dict, field_names: List[str]) -> dict:
+    alias_map: Dict[str, str] = {}
+    for field_name in field_names:
+        alias_map[canonicalize_key(field_name)] = field_name
+        alias_map[canonicalize_key(to_camel(field_name))] = field_name
+
+    normalized: Dict[str, object] = {}
+    for key, value in payload.items():
+        direct_match = key if key in field_names else None
+        mapped_key = alias_map.get(canonicalize_key(key))
+        target_key = direct_match or mapped_key or key
+        normalized[target_key] = value
+
+    return normalized
+
+
 def normalize_type_machine(value) -> str:
     normalized = normalize_value(value)
     mapping = {
@@ -58,6 +84,47 @@ def normalize_type_machine(value) -> str:
     return mapping.get(normalized, normalized)
 
 
+def validate_input(data: "PredictionInput") -> tuple[bool, str]:
+    """
+    Valide les inputs contre les valeurs acceptées du dataset tunisien.
+    Retourne (is_valid, error_message)
+    """
+    if not validation_config:
+        return True, ""  # Pas de validation si le config n'existe pas
+
+    errors = []
+
+    # Validation des features catégoriques
+    categorical_values = validation_config.get("categorical_values", {})
+    for field, allowed_values in categorical_values.items():
+        if hasattr(data, field):
+            value = getattr(data, field)
+            if value is not None:
+                normalized = normalize_value(value)
+                # Essayer direct et normalisé
+                if value not in allowed_values and normalized not in [normalize_value(v) for v in allowed_values]:
+                    errors.append(
+                        f"{field}: '{value}' invalide. Valeurs acceptées: {', '.join(allowed_values)}")
+
+    # Validation des ranges numériques
+    numeric_ranges = validation_config.get("numeric_ranges", {})
+    for field, range_config in numeric_ranges.items():
+        if hasattr(data, field):
+            value = getattr(data, field)
+            if value is not None:
+                min_val = range_config.get("min")
+                max_val = range_config.get("max")
+                if min_val is not None and value < min_val:
+                    errors.append(f"{field}: {value} < minimum {min_val}")
+                if max_val is not None and value > max_val:
+                    errors.append(f"{field}: {value} > maximum {max_val}")
+
+    if errors:
+        return False, "❌ ERREURS DE VALIDATION:\n" + "\n".join(errors)
+
+    return True, ""
+
+
 label_encoder = load_pickle("label_encoder.pkl")
 
 quality_model_no_lab = load_pickle("quality_model_no_lab.pkl")
@@ -68,15 +135,28 @@ yield_model_with_lab = load_pickle("yield_model_with_lab.pkl")
 
 metadata = load_json("metadata.json")
 
+# Load validation configuration
+validation_config = load_json("validation_config.json") if (
+    MODELS_DIR / "validation_config.json").exists() else None
+
 
 app = FastAPI(
     title="API IA Huilerie - Dual Mode",
     description="Prédiction de la qualité, du rendement et de la quantité d'huile avec ou sans analyse labo",
-    version="3.0.0",
+    version="3.0.1",
 )
 
 
 class GuideStepInput(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_keys(cls, data):
+        if isinstance(data, dict):
+            return normalize_payload_keys(data, list(cls.model_fields.keys()))
+        return data
+
     code_etape: str = Field(..., example="nettoyage_lavage")
     nom: Optional[str] = Field(default=None, example="Nettoyage / Lavage")
     machine_id: Optional[int] = Field(default=None, example=12)
@@ -86,22 +166,31 @@ class GuideStepInput(BaseModel):
 
 
 class PredictionInput(BaseModel):
-    variete: str = Field(..., example="Chemlali")
-    region: str = Field(..., example="Mahdia")
-    methode_recolte: str = Field(..., example="manuelle")
-    type_sol: str = Field(..., example="calcaire")
-    poids_olives_kg: float = Field(..., gt=0, example=5000)
-    maturite_niveau_1_5: int = Field(..., ge=1, le=5, example=3)
-    duree_stockage_jours: int = Field(..., ge=0, example=1)
-    temps_depuis_recolte_heures: float = Field(..., ge=0, example=10)
-    temperature_malaxage_c: float = Field(..., gt=0, example=26.0)
-    duree_malaxage_min: float = Field(..., gt=0, example=34)
-    vitesse_decanteur_tr_min: float = Field(..., gt=0, example=3300)
-    humidite_pourcent: float = Field(..., ge=0, example=18.0)
-    acidite_olives_pourcent: float = Field(..., ge=0, example=0.3)
-    taux_feuilles_pourcent: float = Field(..., ge=0, example=0.8)
-    lavage_effectue: str = Field(..., example="oui")
-    type_machine: str = Field(..., example="3_phase")
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_keys(cls, data):
+        if isinstance(data, dict):
+            return normalize_payload_keys(data, list(cls.model_fields.keys()))
+        return data
+
+    variete: str = Field(..., validation_alias=AliasChoices("variete", "Variete"), example="Chemlali")
+    region: str = Field(..., validation_alias=AliasChoices("region", "Region"), example="Mahdia")
+    methode_recolte: str = Field(..., validation_alias=AliasChoices("methode_recolte", "methodeRecolte", "methoderecolte"), example="manuelle")
+    type_sol: str = Field(..., validation_alias=AliasChoices("type_sol", "typeSol", "typesol"), example="calcaire")
+    poids_olives_kg: float = Field(..., validation_alias=AliasChoices("poids_olives_kg", "poidsOlivesKg", "poidsoliveskg"), gt=0, example=5000)
+    maturite_niveau_1_5: int = Field(..., validation_alias=AliasChoices("maturite_niveau_1_5", "maturiteNiveau15", "maturiteniveau15"), ge=1, le=5, example=3)
+    duree_stockage_jours: int = Field(..., validation_alias=AliasChoices("duree_stockage_jours", "dureeStockageJours", "dureestockagejours"), ge=0, example=1)
+    temps_depuis_recolte_heures: float = Field(..., validation_alias=AliasChoices("temps_depuis_recolte_heures", "tempsDepuisRecolteHeures", "tempsdepuisrecolteheures"), ge=0, example=10)
+    temperature_malaxage_c: float = Field(..., validation_alias=AliasChoices("temperature_malaxage_c", "temperatureMalaxageC", "temperaturemalaxagec"), gt=0, example=26.0)
+    duree_malaxage_min: float = Field(..., validation_alias=AliasChoices("duree_malaxage_min", "dureeMalaxageMin", "dureemalaxagemin"), gt=0, example=34)
+    vitesse_decanteur_tr_min: float = Field(..., validation_alias=AliasChoices("vitesse_decanteur_tr_min", "vitesseDecanteurTrMin", "vitessedecanteurtrmin"), gt=0, example=3300)
+    humidite_pourcent: float = Field(..., validation_alias=AliasChoices("humidite_pourcent", "humiditePourcent", "humiditepourcent"), ge=0, example=18.0)
+    acidite_olives_pourcent: float = Field(..., validation_alias=AliasChoices("acidite_olives_pourcent", "aciditeOlivesPourcent", "aciditeolivespourcent"), ge=0, example=0.3)
+    taux_feuilles_pourcent: float = Field(..., validation_alias=AliasChoices("taux_feuilles_pourcent", "tauxFeuillesPourcent", "tauxfeuillespourcent"), ge=0, example=0.8)
+    lavage_effectue: str = Field(..., validation_alias=AliasChoices("lavage_effectue", "lavageEffectue", "lavageeffectue"), example="oui")
+    type_machine: str = Field(..., validation_alias=AliasChoices("type_machine", "typeMachine", "typemachine"), example="3_phase")
     type_broyeur: Optional[str] = Field(default=None, example="marteaux")
     type_malaxeur: Optional[str] = Field(default=None, example="vertical")
     type_nettoyage: Optional[str] = Field(default=None, example="soufflerie")
@@ -113,7 +202,9 @@ class PredictionInput(BaseModel):
     presence_presse: Optional[int] = Field(default=None, ge=0, le=1, example=0)
     presence_separateur: Optional[int] = Field(
         default=None, ge=0, le=1, example=1)
-    controle_temperature: str = Field(..., example="oui")
+    controle_temperature: str = Field(..., validation_alias=AliasChoices("controle_temperature", "controleTemperature", "controletemperature"), example="oui")
+    type_extracteur: Optional[str] = Field(
+        default=None, example="centrifugation_3_phases")
     guide_steps: List[GuideStepInput] = Field(default_factory=list)
 
     # Variables labo optionnelles
@@ -147,6 +238,25 @@ def feature_importance(mode: str):
     }
 
 
+@app.get("/validation-rules")
+def get_validation_rules():
+    """
+    Retourne les règles de validation pour tous les inputs.
+    Affiche les valeurs acceptées et les intervals valides basées sur le dataset tunisien.
+    """
+    if not validation_config:
+        return {"error": "Configuration de validation non disponible"}
+
+    return {
+        "description": "Règles de validation des inputs basées sur le dataset d'olive tunisienne",
+        "categorical_features": validation_config.get("categorical_values", {}),
+        "numeric_ranges": validation_config.get("numeric_ranges", {}),
+        "required_fields": validation_config.get("required_fields", []),
+        "lab_fields": validation_config.get("lab_fields", []),
+        "note": "Tous les inputs doivent respecter ces contraintes pour une prédiction valide"
+    }
+
+
 def has_lab_analysis(data: PredictionInput) -> bool:
     return all(
         value is not None
@@ -170,6 +280,19 @@ def infer_type_nettoyage(payload: dict) -> str:
     if lavage == "oui" and humidity >= 17:
         return "laveuse_eau"
     return "separateur_feuilles"
+
+
+def infer_type_extracteur(payload: dict) -> str:
+    """Deduit le type d'extracteur based on type_separation ou type_machine"""
+    separation = normalize_value(payload.get("type_separation", ""))
+    machine = normalize_value(payload.get("type_machine", ""))
+
+    if "presse" in separation or "naturelle" in separation or machine == "presse":
+        return "presse_hydraulique"
+    elif "3_phases" in separation or "3_phase" in machine:
+        return "centrifugation_3_phases"
+    else:
+        return "centrifugation_2_phases"
 
 
 def infer_type_machine(payload: dict) -> str:
@@ -201,6 +324,8 @@ def derive_payload_features(data: PredictionInput) -> dict:
         "2_phase": "decanteur_2_phases",
         "presse": "decantation_naturelle",
     }[payload["type_machine"]]
+    payload["type_extracteur"] = normalize_value(payload.get(
+        "type_extracteur")) or infer_type_extracteur(payload)
     payload["nombre_etapes"] = int(payload.get("nombre_etapes") or (
         {"3_phase": 7, "2_phase": 6, "presse": 6}[payload["type_machine"]]))
     payload["presence_ajout_eau"] = int(payload.get("presence_ajout_eau") if payload.get(
@@ -270,6 +395,7 @@ def build_input_frame(
         "type_malaxeur": "horizontal",
         "type_nettoyage": "separateur_feuilles",
         "type_separation": "decanteur_2_phases",
+        "type_extracteur": "centrifugation_2_phases",
     }
 
     for column in feature_columns:
@@ -291,7 +417,20 @@ def build_input_frame(
 
 
 @app.post("/predict")
-def predict(data: PredictionInput):
+def predict(payload: Dict[str, Any]):
+    field_names = list(PredictionInput.model_fields.keys())
+    normalized_payload = normalize_payload_keys(payload, field_names)
+
+    try:
+        data = PredictionInput.model_validate(normalized_payload)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    # Valider les inputs
+    is_valid, error_msg = validate_input(data)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
+
     try:
         mode = "with_lab" if has_lab_analysis(data) else "no_lab"
         quality_model, yield_model, feature_columns, categorical_columns, numeric_columns = select_models(

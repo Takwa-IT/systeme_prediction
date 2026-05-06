@@ -1,0 +1,116 @@
+{
+    "categorical_values": {
+        "variete": [
+            "Arbequina",
+            "Chemlali",
+            "Chetoui"
+        ],
+        "region": [
+            "Centre",
+            "Nord",
+            "Sud"
+        ],
+        "methode_recolte": [
+            "manuelle",
+            "mecanique",
+            "semi-mecanique"
+        ],
+        "type_sol": [
+            "argileux",
+            "calcaire",
+            "sableux"
+        ],
+        "lavage_effectue": [
+            "non",
+            "oui"
+        ],
+        "type_machine": [
+            "2_phase",
+            "3_phase",
+            "presse"
+        ],
+        "type_broyeur": [
+            "marteaux",
+            "meule",
+            "disque"
+        ],
+        "type_malaxeur": [
+            "horizontal",
+            "vertical",
+            "malaxeur double cuve"
+        ],
+        "type_nettoyage": [
+            "laveuse_eau",
+            "separateur_feuilles",
+            "soufflerie"
+        ],
+        "type_separation": [
+            "decantation_naturelle",
+            "decanteur_2_phases",
+            "decanteur_3_phases"
+        ],
+        "type_extracteur": [
+            "centrifugation_3_phases",
+            "centrifugation_2_phases",
+            "presse_hydraulique"
+        ],
+        "controle_temperature": [
+            "non",
+            "oui"
+        ]
+    },
+    "numeric_ranges": {
+        "maturite_niveau_1_5": {
+            "min": 1.0,
+            "max": 5.0
+        },
+        "temperature_malaxage_c": {
+            "min": 24.0,
+            "max": 27.0
+        },
+        "duree_malaxage_min": {
+            "min": 25.0,
+            "max": 40.0
+        },
+        "vitesse_decanteur_tr_min": {
+            "min": 3000.0,
+            "max": 3400.0
+        },
+        "humidite_pourcent": {
+            "min": 10.0,
+            "max": 30.0
+        },
+        "acidite_olives_pourcent": {
+            "min": 0.5,
+            "max": 2.5
+        },
+        "taux_feuilles_pourcent": {
+            "min": 0.0,
+            "max": 5.0
+        },
+        "pression_extraction_bar": {
+            "min": 50.0,
+            "max": 350.0
+        },
+        "acidite_huile_pourcent": {
+            "min": 0.1,
+            "max": 5.0
+        },
+        "indice_peroxyde_meq_o2_kg": {
+            "min": 5.0,
+            "max": 40.0
+        },
+        "polyphenols_mg_kg": {
+            "min": 100.0,
+            "max": 800.0
+        },
+        "k232": {
+            "min": 1.5,
+            "max": 3.5
+        },
+        "k270": {
+            "min": 0.1,
+            "max": 0.50
+        }
+    }
+}

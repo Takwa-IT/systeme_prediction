@@ -16,7 +16,6 @@
         "type_nettoyage",
         "type_separation",
         "controle_temperature",
-        "type_extracteur",
         "poids_olives_kg",
         "maturite_niveau_1_5",
         "duree_stockage_jours",
@@ -44,8 +43,7 @@
         "type_malaxeur",
         "type_nettoyage",
         "type_separation",
-        "controle_temperature",
-        "type_extracteur"
+        "controle_temperature"
       ],
       "numeric_features": [
         "poids_olives_kg",
@@ -80,126 +78,126 @@
       },
       "quality_feature_importance_top15": [
         {
-          "feature": "num__acidite_olives_pourcent",
-          "importance": 0.05455227147576179
+          "feature": "num__pression_extraction_bar",
+          "importance": 0.062226
         },
         {
-          "feature": "num__temps_depuis_recolte_heures",
-          "importance": 0.05452617777878989
+          "feature": "num__acidite_olives_pourcent",
+          "importance": 0.05588
         },
         {
           "feature": "num__poids_olives_kg",
-          "importance": 0.05393598468877776
+          "importance": 0.054485
         },
         {
-          "feature": "num__vitesse_decanteur_tr_min",
-          "importance": 0.053141683260317166
+          "feature": "num__temps_depuis_recolte_heures",
+          "importance": 0.054195
         },
         {
           "feature": "num__humidite_pourcent",
-          "importance": 0.04775315602614893
+          "importance": 0.0488
+        },
+        {
+          "feature": "num__presence_presse",
+          "importance": 0.04843
+        },
+        {
+          "feature": "cat__type_broyeur_meule",
+          "importance": 0.04561
         },
         {
           "feature": "num__temperature_malaxage_c",
-          "importance": 0.044046987388648526
-        },
-        {
-          "feature": "num__duree_malaxage_min",
-          "importance": 0.039575814312740785
-        },
-        {
-          "feature": "num__pression_extraction_bar",
-          "importance": 0.03823467069035385
-        },
-        {
-          "feature": "cat__region_Nord",
-          "importance": 0.03769769184146553
-        },
-        {
-          "feature": "cat__controle_temperature_oui",
-          "importance": 0.03735443458758184
-        },
-        {
-          "feature": "num__taux_feuilles_pourcent",
-          "importance": 0.03497404453269811
-        },
-        {
-          "feature": "cat__controle_temperature_non",
-          "importance": 0.03384357831831421
+          "importance": 0.044818
         },
         {
           "feature": "cat__type_separation_decantation_naturelle",
-          "importance": 0.03167921651223659
+          "importance": 0.042096
         },
         {
-          "feature": "cat__region_Sud",
-          "importance": 0.029993152461846025
+          "feature": "cat__type_machine_presse",
+          "importance": 0.040212
         },
         {
-          "feature": "num__duree_stockage_jours",
-          "importance": 0.029370550102932474
+          "feature": "num__duree_malaxage_min",
+          "importance": 0.040009
+        },
+        {
+          "feature": "cat__region_Nord",
+          "importance": 0.037713
+        },
+        {
+          "feature": "num__taux_feuilles_pourcent",
+          "importance": 0.035213
+        },
+        {
+          "feature": "num__vitesse_decanteur_tr_min",
+          "importance": 0.032909
+        },
+        {
+          "feature": "cat__controle_temperature_non",
+          "importance": 0.032059
         }
       ],
       "yield_feature_importance_top15": [
         {
           "feature": "num__pression_extraction_bar",
-          "importance": 0.22544659570486517
-        },
-        {
-          "feature": "num__presence_presse",
-          "importance": 0.08037403269511069
-        },
-        {
-          "feature": "cat__type_broyeur_marteaux",
-          "importance": 0.07509264408061145
-        },
-        {
-          "feature": "cat__type_broyeur_meule",
-          "importance": 0.06975353367066034
-        },
-        {
-          "feature": "cat__type_separation_decantation_naturelle",
-          "importance": 0.0670855729271016
-        },
-        {
-          "feature": "cat__controle_temperature_oui",
-          "importance": 0.06173646753270633
+          "importance": 0.168202
         },
         {
           "feature": "cat__controle_temperature_non",
-          "importance": 0.06170929205788532
+          "importance": 0.117632
+        },
+        {
+          "feature": "num__presence_presse",
+          "importance": 0.11759
+        },
+        {
+          "feature": "cat__type_separation_decantation_naturelle",
+          "importance": 0.107005
+        },
+        {
+          "feature": "cat__type_broyeur_meule",
+          "importance": 0.096469
         },
         {
           "feature": "cat__type_machine_presse",
-          "importance": 0.06159085285306632
+          "importance": 0.093613
         },
         {
-          "feature": "num__vitesse_decanteur_tr_min",
-          "importance": 0.060765920159886896
+          "feature": "cat__type_broyeur_marteaux",
+          "importance": 0.050744
         },
         {
-          "feature": "cat__type_extracteur_presse_hydraulique",
-          "importance": 0.04829392757937732
+          "feature": "cat__controle_temperature_oui",
+          "importance": 0.045514
         },
         {
           "feature": "num__duree_stockage_jours",
-          "importance": 0.023448078237388478
+          "importance": 0.02343
         },
         {
           "feature": "num__maturite_niveau_1_5",
-          "importance": 0.023087466458643145
+          "importance": 0.022982
+        },
+        {
+          "feature": "num__vitesse_decanteur_tr_min",
+          "importance": 0.017848
         },
         {
           "feature": "num__temps_depuis_recolte_heures",
-          "importance": 0.016480041528729075
+          "importance": 0.017097
+        },
+        {
+          "feature": "cat__type_malaxeur_horizontal",
+          "importance": 0.013371
+        },
+        {
+          "feature": "cat__type_separation_decanteur_2_phases",
+          "importance": 0.012554
         },
         {
           "feature": "num__humidite_pourcent",
-          "importance": 0.010369565070390675
-        },
-        {
-          "feature": "cat__region_Sud",
-          "importance": 0.009144641796729821
+          "importance": 0.010094
         }
       ]
     },
@@ -216,7 +214,6 @@
         "type_nettoyage",
         "type_separation",
         "controle_temperature",
-        "type_extracteur",
         "poids_olives_kg",
         "maturite_niveau_1_5",
         "duree_stockage_jours",
@@ -249,8 +246,7 @@
         "type_malaxeur",
         "type_nettoyage",
         "type_separation",
-        "controle_temperature",
-        "type_extracteur"
+        "controle_temperature"
       ],
       "numeric_features": [
         "poids_olives_kg",
@@ -276,140 +272,140 @@
       ],
       "quality_best_params": {
         "model__n_estimators": 300,
-        "model__min_samples_split": 5,
+        "model__min_samples_split": 2,
         "model__min_samples_leaf": 2,
-        "model__max_features": "sqrt",
-        "model__max_depth": 20
+        "model__max_features": null,
+        "model__max_depth": null
       },
       "yield_best_params": {
         "model__n_estimators": 300,
-        "model__min_samples_split": 10,
+        "model__min_samples_split": 2,
         "model__min_samples_leaf": 2,
         "model__max_features": null,
-        "model__max_depth": 20
+        "model__max_depth": null
       },
       "quality_feature_importance_top15": [
         {
           "feature": "num__polyphenols_mg_kg",
-          "importance": 0.158396916465741
-        },
-        {
-          "feature": "num__acidite_huile_pourcent",
-          "importance": 0.09343199488116337
-        },
-        {
-          "feature": "num__indice_peroxyde_meq_o2_kg",
-          "importance": 0.07189180259553508
+          "importance": 0.252488
         },
         {
           "feature": "num__pression_extraction_bar",
-          "importance": 0.03767561619938527
+          "importance": 0.215031
         },
         {
-          "feature": "num__presence_presse",
-          "importance": 0.03562518233215841
+          "feature": "num__acidite_huile_pourcent",
+          "importance": 0.143475
         },
         {
-          "feature": "cat__type_extracteur_presse_hydraulique",
-          "importance": 0.034985259823505886
-        },
-        {
-          "feature": "num__vitesse_decanteur_tr_min",
-          "importance": 0.03237459694252153
-        },
-        {
-          "feature": "cat__controle_temperature_non",
-          "importance": 0.02979446023336019
-        },
-        {
-          "feature": "cat__type_separation_decantation_naturelle",
-          "importance": 0.0280773608997395
-        },
-        {
-          "feature": "num__acidite_olives_pourcent",
-          "importance": 0.027145179273828028
+          "feature": "num__indice_peroxyde_meq_o2_kg",
+          "importance": 0.135867
         },
         {
           "feature": "cat__type_broyeur_meule",
-          "importance": 0.025347760219796008
+          "importance": 0.016821
         },
         {
           "feature": "num__temps_depuis_recolte_heures",
-          "importance": 0.024662765867102174
+          "importance": 0.015972
+        },
+        {
+          "feature": "num__duree_stockage_jours",
+          "importance": 0.015119
+        },
+        {
+          "feature": "num__presence_presse",
+          "importance": 0.014836
+        },
+        {
+          "feature": "cat__type_separation_decantation_naturelle",
+          "importance": 0.013895
+        },
+        {
+          "feature": "num__k270",
+          "importance": 0.013146
+        },
+        {
+          "feature": "num__humidite_pourcent",
+          "importance": 0.012557
+        },
+        {
+          "feature": "num__temperature_malaxage_c",
+          "importance": 0.010909
+        },
+        {
+          "feature": "cat__type_machine_presse",
+          "importance": 0.010852
+        },
+        {
+          "feature": "num__maturite_niveau_1_5",
+          "importance": 0.010403
         },
         {
           "feature": "num__poids_olives_kg",
-          "importance": 0.02321668624689747
-        },
-        {
-          "feature": "cat__region_Nord",
-          "importance": 0.02290800730040187
-        },
-        {
-          "feature": "cat__type_broyeur_marteaux",
-          "importance": 0.021866212400127465
+          "importance": 0.010396
         }
       ],
       "yield_feature_importance_top15": [
         {
           "feature": "num__pression_extraction_bar",
-          "importance": 0.23843288993431894
-        },
-        {
-          "feature": "cat__controle_temperature_non",
-          "importance": 0.085419072459217
-        },
-        {
-          "feature": "cat__type_separation_decantation_naturelle",
-          "importance": 0.07460821280489381
+          "importance": 0.166375
         },
         {
           "feature": "cat__type_broyeur_meule",
-          "importance": 0.07457646643982724
-        },
-        {
-          "feature": "cat__type_broyeur_marteaux",
-          "importance": 0.0693531017271812
-        },
-        {
-          "feature": "num__vitesse_decanteur_tr_min",
-          "importance": 0.06743570554974071
+          "importance": 0.128712
         },
         {
           "feature": "num__presence_presse",
-          "importance": 0.06134587685968099
-        },
-        {
-          "feature": "cat__controle_temperature_oui",
-          "importance": 0.05875588324793346
-        },
-        {
-          "feature": "cat__type_extracteur_presse_hydraulique",
-          "importance": 0.05336077214667951
-        },
-        {
-          "feature": "num__maturite_niveau_1_5",
-          "importance": 0.021936145136799295
-        },
-        {
-          "feature": "num__polyphenols_mg_kg",
-          "importance": 0.021689585940535744
+          "importance": 0.118082
         },
         {
           "feature": "cat__type_machine_presse",
-          "importance": 0.02133500384257964
+          "importance": 0.104942
+        },
+        {
+          "feature": "cat__controle_temperature_non",
+          "importance": 0.094387
+        },
+        {
+          "feature": "cat__type_separation_decantation_naturelle",
+          "importance": 0.086573
+        },
+        {
+          "feature": "num__vitesse_decanteur_tr_min",
+          "importance": 0.035398
+        },
+        {
+          "feature": "cat__controle_temperature_oui",
+          "importance": 0.034119
+        },
+        {
+          "feature": "cat__type_broyeur_marteaux",
+          "importance": 0.02883
+        },
+        {
+          "feature": "num__polyphenols_mg_kg",
+          "importance": 0.025247
+        },
+        {
+          "feature": "num__maturite_niveau_1_5",
+          "importance": 0.021285
         },
         {
           "feature": "num__duree_stockage_jours",
-          "importance": 0.021009763918593372
+          "importance": 0.020911
+        },
+        {
+          "feature": "cat__type_separation_decanteur_2_phases",
+          "importance": 0.01591
         },
         {
           "feature": "num__temps_depuis_recolte_heures",
-          "importance": 0.011740151811677318
+          "importance": 0.013019
         },
         {
           "feature": "num__acidite_huile_pourcent",
-          "importance": 0.011272325107693156
+          "importance": 0.011927
         }
       ]
     }

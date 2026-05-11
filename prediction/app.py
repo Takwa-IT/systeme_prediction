@@ -7,6 +7,7 @@ import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
+import numpy as np
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -175,22 +176,38 @@ class PredictionInput(BaseModel):
             return normalize_payload_keys(data, list(cls.model_fields.keys()))
         return data
 
-    variete: str = Field(..., validation_alias=AliasChoices("variete", "Variete"), example="Chemlali")
-    region: str = Field(..., validation_alias=AliasChoices("region", "Region"), example="Mahdia")
-    methode_recolte: str = Field(..., validation_alias=AliasChoices("methode_recolte", "methodeRecolte", "methoderecolte"), example="manuelle")
-    type_sol: str = Field(..., validation_alias=AliasChoices("type_sol", "typeSol", "typesol"), example="calcaire")
-    poids_olives_kg: float = Field(..., validation_alias=AliasChoices("poids_olives_kg", "poidsOlivesKg", "poidsoliveskg"), gt=0, example=5000)
-    maturite_niveau_1_5: int = Field(..., validation_alias=AliasChoices("maturite_niveau_1_5", "maturiteNiveau15", "maturiteniveau15"), ge=1, le=5, example=3)
-    duree_stockage_jours: int = Field(..., validation_alias=AliasChoices("duree_stockage_jours", "dureeStockageJours", "dureestockagejours"), ge=0, example=1)
-    temps_depuis_recolte_heures: float = Field(..., validation_alias=AliasChoices("temps_depuis_recolte_heures", "tempsDepuisRecolteHeures", "tempsdepuisrecolteheures"), ge=0, example=10)
-    temperature_malaxage_c: float = Field(..., validation_alias=AliasChoices("temperature_malaxage_c", "temperatureMalaxageC", "temperaturemalaxagec"), gt=0, example=26.0)
-    duree_malaxage_min: float = Field(..., validation_alias=AliasChoices("duree_malaxage_min", "dureeMalaxageMin", "dureemalaxagemin"), gt=0, example=34)
-    vitesse_decanteur_tr_min: float = Field(..., validation_alias=AliasChoices("vitesse_decanteur_tr_min", "vitesseDecanteurTrMin", "vitessedecanteurtrmin"), gt=0, example=3300)
-    humidite_pourcent: float = Field(..., validation_alias=AliasChoices("humidite_pourcent", "humiditePourcent", "humiditepourcent"), ge=0, example=18.0)
-    acidite_olives_pourcent: float = Field(..., validation_alias=AliasChoices("acidite_olives_pourcent", "aciditeOlivesPourcent", "aciditeolivespourcent"), ge=0, example=0.3)
-    taux_feuilles_pourcent: float = Field(..., validation_alias=AliasChoices("taux_feuilles_pourcent", "tauxFeuillesPourcent", "tauxfeuillespourcent"), ge=0, example=0.8)
-    lavage_effectue: str = Field(..., validation_alias=AliasChoices("lavage_effectue", "lavageEffectue", "lavageeffectue"), example="oui")
-    type_machine: str = Field(..., validation_alias=AliasChoices("type_machine", "typeMachine", "typemachine"), example="3_phase")
+    variete: str = Field(..., validation_alias=AliasChoices(
+        "variete", "Variete"), example="Chemlali")
+    region: str = Field(..., validation_alias=AliasChoices(
+        "region", "Region"), example="Mahdia")
+    methode_recolte: str = Field(..., validation_alias=AliasChoices(
+        "methode_recolte", "methodeRecolte", "methoderecolte"), example="manuelle")
+    type_sol: str = Field(..., validation_alias=AliasChoices(
+        "type_sol", "typeSol", "typesol"), example="calcaire")
+    poids_olives_kg: float = Field(..., validation_alias=AliasChoices(
+        "poids_olives_kg", "poidsOlivesKg", "poidsoliveskg"), gt=0, example=5000)
+    maturite_niveau_1_5: int = Field(..., validation_alias=AliasChoices(
+        "maturite_niveau_1_5", "maturiteNiveau15", "maturiteniveau15"), ge=1, le=5, example=3)
+    duree_stockage_jours: int = Field(..., validation_alias=AliasChoices(
+        "duree_stockage_jours", "dureeStockageJours", "dureestockagejours"), ge=0, example=1)
+    temps_depuis_recolte_heures: float = Field(..., validation_alias=AliasChoices(
+        "temps_depuis_recolte_heures", "tempsDepuisRecolteHeures", "tempsdepuisrecolteheures"), ge=0, example=10)
+    temperature_malaxage_c: float = Field(..., validation_alias=AliasChoices(
+        "temperature_malaxage_c", "temperatureMalaxageC", "temperaturemalaxagec"), gt=0, example=26.0)
+    duree_malaxage_min: float = Field(..., validation_alias=AliasChoices(
+        "duree_malaxage_min", "dureeMalaxageMin", "dureemalaxagemin"), gt=0, example=34)
+    vitesse_decanteur_tr_min: float = Field(..., validation_alias=AliasChoices(
+        "vitesse_decanteur_tr_min", "vitesseDecanteurTrMin", "vitessedecanteurtrmin"), gt=0, example=3300)
+    humidite_pourcent: float = Field(..., validation_alias=AliasChoices(
+        "humidite_pourcent", "humiditePourcent", "humiditepourcent"), ge=0, example=18.0)
+    acidite_olives_pourcent: float = Field(..., validation_alias=AliasChoices(
+        "acidite_olives_pourcent", "aciditeOlivesPourcent", "aciditeolivespourcent"), ge=0, example=0.3)
+    taux_feuilles_pourcent: float = Field(..., validation_alias=AliasChoices(
+        "taux_feuilles_pourcent", "tauxFeuillesPourcent", "tauxfeuillespourcent"), ge=0, example=0.8)
+    lavage_effectue: str = Field(..., validation_alias=AliasChoices(
+        "lavage_effectue", "lavageEffectue", "lavageeffectue"), example="oui")
+    type_machine: str = Field(..., validation_alias=AliasChoices(
+        "type_machine", "typeMachine", "typemachine"), example="3_phase")
     type_broyeur: Optional[str] = Field(default=None, example="marteaux")
     type_malaxeur: Optional[str] = Field(default=None, example="vertical")
     type_nettoyage: Optional[str] = Field(default=None, example="soufflerie")
@@ -202,7 +219,8 @@ class PredictionInput(BaseModel):
     presence_presse: Optional[int] = Field(default=None, ge=0, le=1, example=0)
     presence_separateur: Optional[int] = Field(
         default=None, ge=0, le=1, example=1)
-    controle_temperature: str = Field(..., validation_alias=AliasChoices("controle_temperature", "controleTemperature", "controletemperature"), example="oui")
+    controle_temperature: str = Field(..., validation_alias=AliasChoices(
+        "controle_temperature", "controleTemperature", "controletemperature"), example="oui")
     type_extracteur: Optional[str] = Field(
         default=None, example="centrifugation_3_phases")
     guide_steps: List[GuideStepInput] = Field(default_factory=list)
@@ -449,13 +467,51 @@ def predict(payload: Dict[str, Any]):
         print(f"Input DataFrame values:\n{input_df}")
         print(f"=== FIN DEBUG ===\n")
 
-        quality_encoded = quality_model.predict(input_df)[0]
-        quality_class = label_encoder.inverse_transform([quality_encoded])[0]
-
         quality_probability = None
-        if hasattr(quality_model.named_steps["model"], "predict_proba"):
-            probas = quality_model.predict_proba(input_df)[0]
-            quality_probability = float(max(probas))
+
+        # Support both sklearn pipelines and ONNX Runtime sessions.
+        if hasattr(quality_model, "run") and callable(getattr(quality_model, "run")):
+            # ONNX Runtime session: ensure required named inputs exist and convert to numpy arrays
+            required_inputs = [inp.name for inp in quality_model.get_inputs()]
+            for col in required_inputs:
+                if col not in input_df.columns:
+                    input_df[col] = 0.0
+
+            ort_inputs = {}
+            for name in required_inputs:
+                arr = input_df[name].to_numpy()
+                # ensure float32 for ONNX
+                try:
+                    ort_inputs[name] = arr.astype(np.float32)
+                except Exception:
+                    ort_inputs[name] = arr
+
+            outputs = quality_model.run(None, ort_inputs)
+
+            # Heuristics: first output is label encoded, second (if present) is probabilities
+            try:
+                quality_encoded = int(outputs[0][0])
+            except Exception:
+                # fallback: try flatten
+                quality_encoded = int(np.array(outputs[0]).ravel()[0])
+
+            if len(outputs) > 1:
+                try:
+                    probas = outputs[1][0]
+                    quality_probability = float(max(probas))
+                except Exception:
+                    quality_probability = None
+
+            quality_class = label_encoder.inverse_transform([quality_encoded])[
+                0]
+        else:
+            quality_encoded = quality_model.predict(input_df)[0]
+            quality_class = label_encoder.inverse_transform([quality_encoded])[
+                0]
+
+            if hasattr(quality_model, "named_steps") and "model" in quality_model.named_steps and hasattr(quality_model.named_steps["model"], "predict_proba"):
+                probas = quality_model.predict_proba(input_df)[0]
+                quality_probability = float(max(probas))
 
         rendement_pred = float(yield_model.predict(input_df)[0])
         poids = float(data.poids_olives_kg)
